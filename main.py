@@ -32,7 +32,7 @@ except Exception as e:
 # ==========================================
 # Section 1. 영화별 일별 관객수 변화 (선 그래프)
 # ==========================================
-st.header("1. 영화별 일별 관객수 추이")
+st.header("1. 개별 영화 일별 관객수 추이")
 
 # 영화 선택 드롭다운 (가나다 순 정렬)
 movie_list = sorted(df['영화명'].unique())
@@ -68,16 +68,54 @@ if not filtered_df.empty:
 else:
     st.warning("선택한 영화의 데이터가 없습니다.")
 
-# 작성하실 문구 영역
+# 작성할 문구 영역
 st.info("💡 **이 그래프로 알 수 있는 것:** (여기에 작성할 문구를 입력하세요)")
 
 st.markdown("---")
 
 # ==========================================
-# Section 2. 추가 그래프 구역 (향후 확장용)
+# Section 2. 누적 관객수 TOP 5 영화 비교 (신규 추가)
 # ==========================================
-st.header("2. [추가 예정] 시간 관련 그래프 2")
-st.text("추후 새로운 시간 관련 그래프가 들어올 구역입니다.")
+st.header("2. 기간 내 일관객 합계 TOP 5 영화 관객수 비교")
+
+# 전체 기간 동안 일관객 합계 상위 5개 영화 추출
+top5_movies = (
+    df.groupby('영화명')['일관객']
+    .sum()
+    .nlargest(5)
+    .index
+    .tolist()
+)
+
+# TOP 5 영화 데이터 필터링
+top5_df = df[df['영화명'].isin(top5_movies)].sort_values('날짜')
+
+# Plotly 선 그래프 생성 (영화명으로 색상 구분)
+fig2 = px.line(
+    top5_df,
+    x='날짜',
+    y='일관객',
+    color='영화명',
+    title="기간 내 일관객 합계 상위 5개 영화의 일별 관객수 추이",
+    labels={'날짜': '날짜', '일관객': '일일 관객수(명)', '영화명': '영화 제목'},
+    markers=True
+)
+
+# 마우스 오버 및 범례 설정
+fig2.update_traces(
+    hovertemplate="<b>영화:</b> %{fullData.name}<br><b>날짜:</b> %{x|%Y-%m-%d}<br><b>관객수:</b> %{y:,}명<extra></extra>"
+)
+
+fig2.update_layout(
+    xaxis_title="날짜",
+    yaxis_title="일일 관객수",
+    legend_title_text="영화 제목 (클릭 시 토글)",
+    hovermode="x"
+)
+
+st.plotly_chart(fig2, use_container_width=True)
+
+# 작성할 문구 영역
 st.info("💡 **이 그래프로 알 수 있는 것:** (여기에 작성할 문구를 입력하세요)")
 
 st.markdown("---")
