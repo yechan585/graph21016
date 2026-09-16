@@ -121,7 +121,7 @@ st.info("💡 **이 그래프로 알 수 있는 것:** (여기에 작성할 문�
 st.markdown("---")
 
 # ==========================================
-# Section 3. 일별 10위권 관객 합계 영역 그래프
+# Section 3. 일별 10위권 관객 합계 영역 그래프 (신규 추가)
 # ==========================================
 st.header("3. 날짜별 TOP 10 총 관객수 합계 추이")
 
@@ -131,7 +131,7 @@ daily_total = df.groupby('날짜')['일관객'].sum().reset_index()
 # 일관객 합계 상위 3일 추출
 top3_days = daily_total.nlargest(3, '일관객').sort_values('일관객', ascending=False)
 
-# Plotly 영역 그래프 생성
+# Plotly 영역 그래프(Area Chart) 생성
 fig3 = px.area(
     daily_total,
     x='날짜',
@@ -146,7 +146,7 @@ fig3.update_traces(
     fillcolor='rgba(31, 119, 180, 0.3)'
 )
 
-# 상위 3일 위치에 주석(어노테이션) 및 마커 추가
+# 상위 3일 지점에 화살표 주석(Annotation) 추가
 for rank, row in enumerate(top3_days.itertuples(), start=1):
     date_str = row.날짜.strftime('%Y-%m-%d')
     total_val = row.일관객
@@ -182,124 +182,8 @@ st.info("💡 **이 그래프로 알 수 있는 것:** (여기에 작성할 문�
 st.markdown("---")
 
 # ==========================================
-# Section 4. 기간 내 총 관객수 TOP 10 가로 막대그래프
+# Section 4. 추가 그래프 구역 (향후 확장용)
 # ==========================================
-st.header("4. 기간 내 총 관객수 TOP 10 영화 (가로 막대)")
-
-# 영화별 일관객 합계 및 10위권 차트인 날수 집계
-top10_bar_df = (
-    df.groupby('영화명')
-    .agg(
-        총관객수=('일관객', 'sum'),
-        차트인날수=('날짜', 'nunique')
-    )
-    .reset_index()
-    .sort_values(by='총관객수', ascending=False)
-    .head(10)
-)
-
-# 관객이 많은 영화가 위에 오도록 정렬 (Plotly y축은 아래에서 위로 그려지므로 ascending=True 정렬 필요)
-top10_bar_df_sorted = top10_bar_df.sort_values(by='총관객수', ascending=True)
-
-# Plotly 가로 막대그래프 생성
-fig4 = px.bar(
-    top10_bar_df_sorted,
-    x='총관객수',
-    y='영화명',
-    orientation='h',
-    title="기간 내 일관객 합계 TOP 10 영화 순위",
-    labels={'총관객수': '총 관객수(명)', '영화명': '영화 제목', '차트인날수': '10위권 등재 날수'},
-    hover_data={'차트인날수': True, '총관객수': ':,d', '영화명': False},
-    color='총관객수',
-    color_continuous_scale='Blues'
-)
-
-# 마우스 오버 툴팁 설정
-fig4.update_traces(
-    hovertemplate="<b>영화명:</b> %{y}<br><b>총 관객수:</b> %{x:,}명<br><b>10위권 든 날수:</b> %{customdata[0]}일<extra></extra>"
-)
-
-fig4.update_layout(
-    xaxis_title="총 관객수(명)",
-    yaxis_title="영화 제목",
-    coloraxis_showscale=False
-)
-
-st.plotly_chart(fig4, use_container_width=True)
-
-# 작성할 문구 영역
-st.info("💡 **이 그래프로 알 수 있는 것:** (여기에 작성할 문구를 입력하세요)")
-
-st.markdown("---")
-
-# ==========================================
-# Section 5. 월×요일별 일관객 합계 히트맵
-# ==========================================
-st.header("5. 월×요일별 총 관객수 합계 히트맵")
-
-# 월, 요일 데이터 파생 변수 생성
-df_hm = df.copy()
-df_hm['월'] = df_hm['날짜'].dt.month.astype(str) + '월'
-df_hm['요일'] = df_hm['날짜'].dt.day_name()
-
-# 요일 한글 변환 및 순서 정의 (월요일 -> 일요일)
-day_map = {
-    'Monday': '월요일',
-    'Tuesday': '화요일',
-    'Wednesday': '수요일',
-    'Thursday': '목요일',
-    'Friday': '금요일',
-    'Saturday': '토요일',
-    'Sunday': '일요일'
-}
-df_hm['요일'] = df_hm['요일'].map(day_map)
-
-# 월/요일 순서 정의
-months_order = [f"{i}월" for i in range(1, 13)]
-days_order = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일']
-
-# 월 x 요일 그룹화 및 관객수 합계 집계
-heatmap_df = df_hm.groupby(['월', '요일'])['일관객'].sum().reset_index()
-
-# 피벗 테이블 생성 (행: 월, 열: 요일)
-pivot_df = heatmap_df.pivot(index='월', columns='요일', values='일관객')
-
-# 순서 재정렬 (데이터에 존재하는 월/요일 기준)
-existing_months = [m for m in months_order if m in pivot_df.index]
-existing_days = [d for d in days_order if d in pivot_df.columns]
-pivot_df = pivot_df.reindex(index=existing_months, columns=existing_days).fillna(0)
-
-# 히트맵 그래프 생성
-fig5 = px.imshow(
-    pivot_df,
-    labels=dict(x="요일", y="월", color="총 관객수(명)"),
-    x=existing_days,
-    y=existing_months,
-    color_continuous_scale="Blues", # 색이 진할수록 관객 수가 많아짐
-    title="월×요일별 관객수 합계 분포"
-)
-
-# 마우스 오버(툴팁) 커스텀 설정
-fig5.update_traces(
-    hovertemplate="<b>%{y} %{x}</b><br>총 관객수: %{z:,}명<extra></extra>"
-)
-
-fig5.update_layout(
-    xaxis_title="요일",
-    yaxis_title="월",
-    coloraxis_colorbar=dict(title="관객수(명)")
-)
-
-st.plotly_chart(fig5, use_container_width=True)
-
-# 작성할 문구 영역
-st.info("💡 **이 그래프로 알 수 있는 것:** (여기에 작성할 문구를 입력하세요)")
-
-st.markdown("---")
-
-# ==========================================
-# Section 6. 추가 그래프 구역 (향후 확장용)
-# ==========================================
-st.header("6. [추가 예정] 시간 관련 그래프 6")
+st.header("4. [추가 예정] 시간 관련 그래프 4")
 st.text("추후 새로운 시간 관련 그래프가 들어올 구역입니다.")
 st.info("💡 **이 그래프로 알 수 있는 것:** (여기에 작성할 문구를 입력하세요)")
