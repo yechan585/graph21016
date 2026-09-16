@@ -182,7 +182,7 @@ st.info("💡 **이 그래프로 알 수 있는 것:** (여기에 작성할 문�
 st.markdown("---")
 
 # ==========================================
-# Section 4. 기간 내 총 관객수 TOP 10 가로 막대그래프 (신규 추가)
+# Section 4. 기간 내 총 관객수 TOP 10 가로 막대그래프
 # ==========================================
 st.header("4. 기간 내 총 관객수 TOP 10 영화 (가로 막대)")
 
@@ -198,7 +198,7 @@ top10_bar_df = (
     .head(10)
 )
 
-# 관객이 많은 영화가 위에 오도록 정렬 (Plotly y축 표시 방식에 맞춤)
+# 관객이 많은 영화가 위에 오도록 정렬 (Plotly y축은 아래에서 위로 그려지므로 ascending=True 정렬 필요)
 top10_bar_df_sorted = top10_bar_df.sort_values(by='총관객수', ascending=True)
 
 # Plotly 가로 막대그래프 생성
@@ -214,7 +214,7 @@ fig4 = px.bar(
     color_continuous_scale='Blues'
 )
 
-# 마우스 오버 툴팁 커스텀 설정
+# 마우스 오버 툴팁 설정
 fig4.update_traces(
     hovertemplate="<b>영화명:</b> %{y}<br><b>총 관객수:</b> %{x:,}명<br><b>10위권 든 날수:</b> %{customdata[0]}일<extra></extra>"
 )
